@@ -3,13 +3,21 @@ package main
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
-var urlMap = make(map[string]string)
+var urlMap = make(map[string]urlData)
+
+type urlData struct {
+	url               string
+	date              time.Time
+	needsConfirmation bool
+}
 
 func generateUUID() string {
 	uuid := make([]byte, 16)
@@ -30,29 +38,27 @@ func main() {
 }
 
 func shortUrlHandler(writer http.ResponseWriter, request *http.Request) {
-	url := urlMap[request.PathValue("key")]
-	if url == "" {
+	urlData := urlMap[request.PathValue("key")]
+	fmt.Print(urlData)
+	if urlData.url == "" {
 		http.Error(writer, "Page not found", http.StatusNotFound)
 	}
 
-	http.Redirect(writer, request, url, http.StatusFound)
+	http.Redirect(writer, request, urlData.url, http.StatusFound)
 }
 
 func urlHandler(writer http.ResponseWriter, request *http.Request) {
 	url := request.FormValue("url")
-	isNsfw, parseError := strconv.ParseBool(request.FormValue("nsfw"))
+	needsConfirmation, _ := strconv.ParseBool(request.FormValue("needsConfirmation"))
 	hostName := request.Host
 
 	var stringBuilder strings.Builder
 	stringBuilder.WriteString(hostName)
 	stringBuilder.WriteString("/short/")
-	if parseError == nil && isNsfw {
-
-	}
 
 	uuid := generateUUID()
 	stringBuilder.WriteString(uuid)
-	urlMap[uuid] = url
+	urlMap[uuid] = urlData{url: url, needsConfirmation: needsConfirmation, date: time.Now()}
 
 	writer.Write([]byte(stringBuilder.String()))
 }
