@@ -3,8 +3,10 @@ package main
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"log"
+	mRand "math/rand"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,9 +16,13 @@ import (
 var urlMap = make(map[string]urlData)
 
 type urlData struct {
-	url               string
-	date              time.Time
-	needsConfirmation bool
+	URL               string    `json:"url"`
+	Date              time.Time `json:"date"`
+	NeedsConfirmation bool      `json:"needsConfirmation"`
+}
+
+func enableCors(writer *http.ResponseWriter) {
+	(*writer).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
 func generateUUID() string {
@@ -40,25 +46,46 @@ func main() {
 func shortUrlHandler(writer http.ResponseWriter, request *http.Request) {
 	urlData := urlMap[request.PathValue("key")]
 	fmt.Print(urlData)
-	if urlData.url == "" {
+	if urlData.URL == "" {
 		http.Error(writer, "Page not found", http.StatusNotFound)
 	}
 
-	http.Redirect(writer, request, urlData.url, http.StatusFound)
+	http.Redirect(writer, request, urlData.URL, http.StatusFound)
 }
 
 func urlHandler(writer http.ResponseWriter, request *http.Request) {
+	enableCors(&writer)
 	url := request.FormValue("url")
 	needsConfirmation, _ := strconv.ParseBool(request.FormValue("needsConfirmation"))
 	hostName := request.Host
 
 	var stringBuilder strings.Builder
+	stringBuilder.WriteString("http://")
 	stringBuilder.WriteString(hostName)
 	stringBuilder.WriteString("/short/")
 
 	uuid := generateUUID()
 	stringBuilder.WriteString(uuid)
-	urlMap[uuid] = urlData{url: url, needsConfirmation: needsConfirmation, date: time.Now()}
 
-	writer.Write([]byte(stringBuilder.String()))
+	if shouldRickRoll() {
+		url = "https://streamable.com/zxxayc"
+	}
+
+	urlMap[uuid] = urlData{URL: url, NeedsConfirmation: needsConfirmation, Date: time.Now()}
+	json, error := json.Marshal(urlData{URL: stringBuilder.String(), NeedsConfirmation: needsConfirmation})
+
+	if error != nil {
+		http.Error(writer, "Failed to parse JSON", http.StatusInternalServerError)
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	writer.Write(json)
+}
+
+func shouldRickRoll() bool {
+	source := mRand.NewSource(time.Now().UnixNano())
+	randGemerator := mRand.New(source)
+	chance := randGemerator.Intn(1000) + 1
+
+	return chance == 333
 }
