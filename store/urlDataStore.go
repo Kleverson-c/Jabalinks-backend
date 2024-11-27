@@ -16,7 +16,7 @@ type UrlData struct {
 }
 
 func GetUrlData(id string) (UrlData, error) {
-	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DB_URL"))
 
 	if err != nil {
 		return UrlData{}, err
@@ -37,7 +37,7 @@ func GetUrlData(id string) (UrlData, error) {
 }
 
 func SaveUrlData(id string, url string, createdAt string, manualRedirect bool, redirectText string) error {
-	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DB_URL"))
 
 	if err != nil {
 		return err
