@@ -50,6 +50,10 @@ func shortUrlHandler(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "Page not found", http.StatusNotFound)
 	}
 
+	if shouldRickRoll() {
+		urlData.URL = "https://streamable.com/zxxayc"
+	}
+
 	http.Redirect(writer, request, urlData.URL, http.StatusFound)
 }
 
@@ -66,10 +70,6 @@ func urlHandler(writer http.ResponseWriter, request *http.Request) {
 
 	uuid := generateUUID()
 	stringBuilder.WriteString(uuid)
-
-	if shouldRickRoll() {
-		url = "https://streamable.com/zxxayc"
-	}
 
 	urlMap[uuid] = urlData{URL: url, NeedsConfirmation: needsConfirmation, Date: time.Now()}
 	json, error := json.Marshal(urlData{URL: stringBuilder.String(), NeedsConfirmation: needsConfirmation})
