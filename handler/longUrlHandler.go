@@ -62,7 +62,7 @@ func UrlHandler(writer http.ResponseWriter, request *http.Request) {
 		RedirectText:   redirectText,
 	}
 
-	json, err := json.Marshal(UrlData{Url: url})
+	json, err := json.Marshal(UrlData{ID: stringBuilder.String()})
 
 	if err != nil {
 		http.Error(writer, "failed to parse JSON", http.StatusInternalServerError)
