@@ -5,12 +5,9 @@ import (
 	"net/http"
 
 	"Jabalinks/handler"
-
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	godotenv.Load(".env")
 	handler.CreateUrlMap()
 
 	mux := http.NewServeMux()
